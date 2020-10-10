@@ -3,24 +3,26 @@ import PropTypes from "prop-types";
 
 export default class Searchbar extends React.Component {
   static propTypes = {
-    onSubmit: PropTypes.func,
+    onNewQuery: PropTypes.func.isRequired,
   };
 
   state = {
-    inputValue: "",
+    keyword: "",
   };
 
   handleChange = (e) => {
+    const { name, value } = e.target;
     this.setState({
-      inputValue: e.target.value,
+      [name]: value,
     });
   };
 
   handleSubmit = (e) => {
     e.preventDefault();
-    if (this.state.inputValue) {
-      this.props.onSubmit(this.state.inputValue.split(" ").join("+"));
-      this.setState({ inputValue: "" });
+    const { keyword } = this.state;
+    if (keyword) {
+      this.props.onNewQuery(keyword.split(" ").join("+"));
+      this.setState({ keyword: "" });
     }
   };
   render() {
@@ -34,7 +36,8 @@ export default class Searchbar extends React.Component {
           <input
             className="SearchForm-input"
             type="text"
-            value={this.state.inputValue}
+            name="keyword"
+            value={this.state.keyword}
             onChange={this.handleChange}
             autoComplete="off"
             autoFocus

@@ -1,32 +1,35 @@
 import React from "react";
-import Searchbar from "./Searchbar/Searchbar";
-import ImageGallery from "./ImageGallery/ImageGallery";
-import Modal from "./Modal/Modal";
 
-import FetchAPI from "./services/FetchAPI";
+import Searchbar from "./components/Searchbar";
+import ImageGallery from "./components/ImageGallery";
+import Modal from "./components/Modal";
+
+import FetchAPI from "./utils/FetchAPI";
 
 export default class SearchImageApp extends React.Component {
   state = {
-    imgList: [],
-    searchQuery: null,
+    images: [],
+    query: null,
     page: 1,
     error: null,
     isLoading: false,
-    largeURL: null,
-    alt: null,
-    isModal: false,
+    modal: {
+      isModal: false,
+      imgURL: null,
+      description: null,
+    },
   };
 
   componentDidUpdate(prevProps, prevState) {
-    const prevQuery = prevState.searchQuery;
-    const nextQuery = this.state.searchQuery;
+    const prevQuery = prevState.query;
+    const nextQuery = this.state.query;
     if (prevQuery !== nextQuery) {
       this.fetchData();
     }
-
+    // Activation scrollTo - nedd refactoring
     if (
-      prevState.imgList.length !== 0 &&
-      prevState.imgList.length < this.state.imgList.length
+      prevState.images.length !== 0 &&
+      prevState.images.length < this.state.images.length
     ) {
       window.scrollTo({
         top: document.documentElement.scrollHeight,
@@ -35,43 +38,51 @@ export default class SearchImageApp extends React.Component {
     }
   }
 
-  handleCloseModal = () => {
-    this.setState({ isModal: false });
+  handleOpenModal = (imgURL, description) => {
+    this.setState({
+      modal: {
+        imgURL,
+        description,
+        isModal: true,
+      },
+    });
   };
 
-  handleNewSearchSubmit = (query) => {
-    if (query === this.state.searchQuery) {
+  handleCloseModal = () => {
+    this.setState({
+      modal: {
+        imgURL: null,
+        description: null,
+        isModal: false,
+      },
+    });
+  };
+
+  handleNewQuery = (query) => {
+    if (query === this.state.query) {
       return;
     }
 
     this.setState({
-      searchQuery: query,
+      query,
       page: 1,
-      imgList: [],
+      images: [],
     });
   };
 
-  handleClickLoadMore = () => {
+  handleLoadMore = () => {
     this.fetchData();
-  };
-
-  handleClickImg = (largeURL, alt) => {
-    this.setState({
-      largeURL,
-      alt,
-      isModal: true,
-    });
   };
 
   fetchData = async () => {
     this.setState({ isLoading: true });
-    const { searchQuery, page } = this.state;
+    const { query, page } = this.state;
     try {
-      const data = await FetchAPI.getData(searchQuery, page);
+      const data = await FetchAPI.getData(query, page);
       this.setState((state) => {
         return {
           page: state.page + 1,
-          imgList: [...state.imgList, ...data],
+          images: [...state.images, ...data],
         };
       });
     } catch (e) {
@@ -82,20 +93,25 @@ export default class SearchImageApp extends React.Component {
   };
 
   render() {
-    const { imgList, isLoading, largeURL, alt } = this.state;
+    const {
+      images,
+      isLoading,
+      modal: { imgURL, description, isModal },
+    } = this.state;
+
     return (
       <div>
-        <Searchbar onSubmit={this.handleNewSearchSubmit} />
+        <Searchbar onNewQuery={this.handleNewQuery} />
         <ImageGallery
-          list={imgList}
+          images={images}
           isLoading={isLoading}
-          onClickLoadMore={this.handleClickLoadMore}
-          onClickImg={this.handleClickImg}
+          onLoadMore={this.handleLoadMore}
+          onOpenModal={this.handleOpenModal}
         />
-        {this.state.isModal && (
+        {isModal && (
           <Modal
-            largeURL={largeURL}
-            alt={alt}
+            imgURL={imgURL}
+            description={description}
             closeModal={this.handleCloseModal}
           />
         )}
